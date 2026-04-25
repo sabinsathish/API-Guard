@@ -7,6 +7,15 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="styles.css">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecOps — Attack Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="shell">
@@ -21,6 +30,9 @@
         </div>
       </div>
       <div class="header-right">
+        <button class="btn-link" onclick="toggleTheme()" id="themeBtn">
+          <span>🌙</span>
+        </button>
         <a href="/dashboard/" class="btn-link return-link">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
           Return to Dashboard
@@ -181,5 +193,27 @@ window.logout = function() {
 };
 </script>
 <script src="app.js"></script>
+<script>
+  // ── Theme switching ───────────────────────────────────────────────────────────
+  function initTheme() {
+    const theme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('themeBtn');
+    if (btn) {
+      btn.querySelector('span').textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+  }
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    const btn = document.getElementById('themeBtn');
+    if (btn) {
+      btn.querySelector('span').textContent = next === 'dark' ? '☀️' : '🌙';
+    }
+  }
+  document.addEventListener('DOMContentLoaded', initTheme);
+</script>
 </body>
 </html>

@@ -21,6 +21,9 @@
       </div>
     </div>
     <div class="topbar-right">
+      <button class="nav-link" onclick="toggleTheme()" id="themeBtn">
+        <span>🌙</span>
+      </button>
       <a href="/dashboard/" class="nav-link return-link">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px; margin-bottom: 2px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         Return to Dashboard
@@ -148,5 +151,27 @@ window.logout = function() {
 };
 </script>
 <script src="app.js"></script>
+<script>
+  // ── Theme switching ───────────────────────────────────────────────────────────
+  function initTheme() {
+    const theme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    const btn = document.getElementById('themeBtn');
+    if (btn) {
+      btn.querySelector('span').textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+  }
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    const btn = document.getElementById('themeBtn');
+    if (btn) {
+      btn.querySelector('span').textContent = next === 'dark' ? '☀️' : '🌙';
+    }
+  }
+  document.addEventListener('DOMContentLoaded', initTheme);
+</script>
 </body>
 </html>

@@ -65,9 +65,14 @@
       </nav>
 
       <div class="connection-status">
-        <span class="dot" id="connDot"></span>
-        <span id="connLabel">Connecting…</span>
+        <div class="dot" id="connDot"></div>
+        <span id="connLabel">Connecting...</span>
       </div>
+
+      <button class="nav-btn" onclick="toggleTheme()" id="themeBtn" style="margin-top: 4px; border: 1px solid var(--border);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <span>Toggle Theme</span>
+      </button>
 
       <div class="user-profile" style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 12px;">
@@ -293,5 +298,27 @@
   </div>
 
   <script src="app.js"></script>
+  <script>
+    // ── Theme switching ───────────────────────────────────────────────────────────
+    function initTheme() {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      const btn = document.getElementById('themeBtn');
+      if (btn) {
+        btn.querySelector('span').textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+      }
+    }
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      const btn = document.getElementById('themeBtn');
+      if (btn) {
+        btn.querySelector('span').textContent = next === 'dark' ? 'Light Mode' : 'Dark Mode';
+      }
+    }
+    document.addEventListener('DOMContentLoaded', initTheme);
+  </script>
 </body>
 </html>

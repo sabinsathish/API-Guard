@@ -7,44 +7,67 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #070910; --surf: #0f1119; --surf2: #161926; --border: #1e2436;
-      --text: #dde3f0; --muted: #7c859e;
-      --blue: #4f6ef7; --blue-glow: rgba(79,110,247,.4);
-      --green: #10c984; --red: #ef4444; --amber: #f59e0b;
+    :root[data-theme='dark'] {
+      --bg: #050505; --surf: #0f0f0f; --surf2: #1a1a1a; --border: #333333;
+      --text: #ffffff; --muted: #888888;
+      --accent: #39ff14; --accent-glow: rgba(57, 255, 20, 0.4);
+      --red: #ff3131; --amber: #ffaa00; --blue: #00ccff;
       --mono: 'JetBrains Mono', monospace; --sans: 'Inter', system-ui, sans-serif;
     }
-    html, body { height: 100%; font-family: var(--sans); background: var(--bg); color: var(--text); }
+    :root[data-theme='light'] {
+      --bg: #ffffff; --surf: #f5f5f5; --surf2: #eeeeee; --border: #dddddd;
+      --text: #050505; --muted: #666666;
+      --accent: #2eb82e; --accent-glow: rgba(46, 184, 46, 0.2);
+      --red: #d90429; --amber: #f48c06; --blue: #0077b6;
+      --mono: 'JetBrains Mono', monospace; --sans: 'Inter', system-ui, sans-serif;
+    }
+    
+    html, body { height: 100%; font-family: var(--sans); background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; }
 
     /* Animated grid background */
     body::before {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-      background-image: linear-gradient(rgba(79,110,247,.04) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(79,110,247,.04) 1px, transparent 1px);
+      background-image: linear-gradient(var(--accent-glow) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--accent-glow) 1px, transparent 1px);
       background-size: 40px 40px;
+      opacity: 0.2;
     }
 
     .page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; position: relative; z-index: 1; }
 
+    /* Theme Toggle */
+    .theme-toggle {
+      position: absolute; top: 24px; right: 24px;
+      background: var(--surf2); border: 1px solid var(--border);
+      color: var(--text); padding: 8px 12px; border-radius: 12px;
+      cursor: pointer; font-size: 1.2rem; transition: all 0.2s;
+    }
+    .theme-toggle:hover { border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+
     /* Brand */
     .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
-    .brand-icon { width: 48px; height: 48px; background: linear-gradient(135deg, #4f6ef7, #8b5cf6); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; box-shadow: 0 0 24px var(--blue-glow); }
+    .brand-icon { 
+      width: 48px; height: 48px; background: var(--accent); color: #000;
+      border-radius: 14px; display: flex; align-items: center; justify-content: center; 
+      font-size: 1.4rem; box-shadow: 0 0 20px var(--accent-glow); 
+    }
     .brand-text h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -.3px; }
     .brand-text p  { font-size: .78rem; color: var(--muted); margin-top: 2px; }
 
     /* Card */
     .card {
       width: 100%; max-width: 420px;
-      background: rgba(15,17,25,0.7); border: 1px solid var(--border);
+      background: var(--surf); border: 1px solid var(--border);
       border-radius: 20px; padding: 36px;
-      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 32px 80px rgba(0,0,0,.6), inset 0 1px 1px rgba(255,255,255,0.05);
+      box-shadow: 0 32px 80px rgba(0,0,0,.4);
+      transition: border-color 0.3s;
     }
+    .card:hover { border-color: var(--accent); }
 
     /* Tabs */
     .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 28px; background: var(--bg); border-radius: 10px; padding: 4px; }
     .tab { padding: 9px; border: none; border-radius: 8px; background: transparent; color: var(--muted); font-family: var(--sans); font-size: .85rem; font-weight: 600; cursor: pointer; transition: all .2s; }
-    .tab.active { background: var(--surf2); color: var(--text); }
+    .tab.active { background: var(--accent); color: #000; }
 
     /* Form */
     .form-group { margin-bottom: 18px; }
@@ -54,7 +77,7 @@
       color: var(--text); border-radius: 10px; font-family: var(--sans); font-size: .9rem;
       outline: none; transition: border-color .2s, box-shadow .2s;
     }
-    input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-glow); }
+    input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
     select option { background: var(--surf2); }
 
     .password-wrap { position: relative; }
@@ -63,21 +86,20 @@
 
     .btn-primary {
       width: 100%; padding: 13px; margin-top: 8px;
-      background: linear-gradient(135deg, #4f6ef7, #6f4bf7);
-      border: none; border-radius: 10px; color: #fff;
+      background: var(--accent); border: none; border-radius: 10px; color: #000;
       font-family: var(--sans); font-size: .95rem; font-weight: 700;
-      cursor: pointer; transition: opacity .2s, transform .1s;
-      box-shadow: 0 4px 24px var(--blue-glow);
+      cursor: pointer; transition: all .2s;
+      box-shadow: 0 4px 15px var(--accent-glow);
     }
-    .btn-primary:hover { opacity: .92; }
+    .btn-primary:hover { opacity: .9; transform: translateY(-2px); box-shadow: 0 6px 20px var(--accent-glow); }
     .btn-primary:active { transform: scale(.98); }
     .btn-primary:disabled { opacity: .4; cursor: not-allowed; }
 
     /* Alert */
     .alert { padding: 11px 14px; border-radius: 10px; font-size: .83rem; margin-bottom: 16px; display: none; }
     .alert.show { display: block; }
-    .alert.error   { background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; }
-    .alert.success { background: rgba(16,201,132,.12); border: 1px solid rgba(16,201,132,.3); color: #6ee7b7; }
+    .alert.error   { background: rgba(255,49,49,.12); border: 1px solid rgba(255,49,49,.3); color: var(--red); }
+    .alert.success { background: rgba(57,255,20,.12); border: 1px solid rgba(57,255,20,.3); color: var(--accent); }
 
     /* Divider */
     .divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; }
@@ -85,11 +107,11 @@
     .divider span { font-size: .75rem; color: var(--muted); }
 
     /* Demo creds */
-    .demo-hint { background: rgba(79,110,247,.07); border: 1px solid rgba(79,110,247,.2); border-radius: 10px; padding: 12px 14px; font-size: .8rem; color: var(--muted); }
-    .demo-hint code { color: var(--blue); font-family: var(--mono); }
+    .demo-hint { background: var(--surf2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: .8rem; color: var(--muted); }
+    .demo-hint code { color: var(--accent); font-family: var(--mono); font-weight: 700; }
 
     /* Spinner */
-    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(0,0,0,.3); border-top-color: #000; border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle; margin-right: 6px; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Strength bar */
@@ -100,6 +122,7 @@
   </style>
 </head>
 <body>
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 <div class="page">
   <div class="brand">
     <div class="brand-icon">🛡️</div>
@@ -170,6 +193,21 @@
 </div>
 
 <script>
+// ── Theme switching ───────────────────────────────────────────────────────────
+function initTheme() {
+  const theme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  document.getElementById('themeBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+}
+document.addEventListener('DOMContentLoaded', initTheme);
+
 // ── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(tab) {
   document.getElementById('loginForm').style.display    = tab === 'login'    ? '' : 'none';

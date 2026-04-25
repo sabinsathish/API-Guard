@@ -74,9 +74,10 @@ socket.on('disconnect', () => {
 
 // ── Traffic chart (line) ─────────────────────────────────────────────────────
 const trafficCtx = $('trafficChart').getContext('2d');
+const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#39ff14';
 const tGrad = trafficCtx.createLinearGradient(0, 0, 0, 260);
-tGrad.addColorStop(0, 'rgba(79,110,247,.35)');
-tGrad.addColorStop(1, 'rgba(79,110,247,.00)');
+tGrad.addColorStop(0, accentColor + '55');
+tGrad.addColorStop(1, 'transparent');
 
 const trafficChart = new Chart(trafficCtx, {
   type: 'line',
@@ -85,7 +86,7 @@ const trafficChart = new Chart(trafficCtx, {
     datasets: [{
       label: 'req/s',
       data:  Array(30).fill(0),
-      borderColor: '#4f6ef7',
+      borderColor: accentColor,
       backgroundColor: tGrad,
       borderWidth: 2.5,
       tension: 0.4,
@@ -110,7 +111,7 @@ const statusChart = new Chart(statusCtx, {
   type: 'doughnut',
   data: {
     labels: ['2xx OK', '4xx Error', '5xx Server'],
-    datasets: [{ data: [1, 0, 0], backgroundColor: ['#10c984', '#f59e0b', '#ef4444'], borderWidth: 0, hoverOffset: 4 }]
+    datasets: [{ data: [1, 0, 0], backgroundColor: [accentColor, '#f59e0b', '#ef4444'], borderWidth: 0, hoverOffset: 4 }]
   },
   options: {
     responsive: true, maintainAspectRatio: false,
@@ -421,7 +422,14 @@ async function registerApi(e) {
 }
 
 socket.on('api_registered', (apis) => {
-  if ($('view-apis') && $('view-apis').classList.contains('active')) {
+    if ($('view-apis') && $('view-apis').classList.contains('active')) {
     fetchApis();
+  }
+});
+
+// ── Theme Sync ──
+window.addEventListener('storage', (e) => {
+  if (e.key === 'theme') {
+    location.reload();
   }
 });
