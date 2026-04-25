@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecOps — Python Attacker Terminal</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="skull">🐍</span>
+      <div>
+        <h1>Python Attacker Terminal</h1>
+        <p class="sub">attack.py — Live Demo Controller</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <a href="/dashboard/" class="nav-link">📊 Dashboard</a>
+      <a href="/attack/"    class="nav-link">⚔️ Attack UI</a>
+      <div class="conn-chip" id="connChip">
+        <span class="dot" id="dot"></span><span id="connLbl">Connecting…</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- BODY GRID -->
+  <div class="body-grid">
+
+    <!-- LEFT COLUMN: Controls -->
+    <div class="left-col">
+
+      <!-- Attack modes -->
+      <div class="panel">
+        <div class="panel-title">🎯 Select Attack Mode</div>
+        <div class="mode-grid">
+          <button class="mode-btn green"  data-mode="normal"      onclick="selectMode(this)">Normal<br><small>~5 req/s baseline</small></button>
+          <button class="mode-btn amber"  data-mode="rate_abuse"  onclick="selectMode(this)">Rate Abuse<br><small>Single IP flood</small></button>
+          <button class="mode-btn purple" data-mode="brute_force" onclick="selectMode(this)">Brute Force<br><small>Credential stuffing</small></button>
+          <button class="mode-btn red"    data-mode="dos"         onclick="selectMode(this)">DoS Flood<br><small>60-thread flood</small></button>
+          <button class="mode-btn blue full" data-mode="demo"     onclick="selectMode(this)">▶ Full Demo — All 5 Phases Automated</button>
+        </div>
+      </div>
+
+      <!-- Options -->
+      <div class="panel">
+        <div class="panel-title">⚙️ Options</div>
+        <div class="opt-row">
+          <label>Duration (sec)</label>
+          <input type="number" id="duration" value="15" min="5" max="60" class="opt-input">
+        </div>
+        <div class="opt-row">
+          <label>Gateway URL</label>
+          <input type="text" id="host" value="http://localhost:3000" class="opt-input">
+        </div>
+      </div>
+
+      <!-- Run controls -->
+      <div class="run-controls">
+        <button class="run-btn" id="runBtn" onclick="runAttack()">▶ Run attack.py</button>
+        <button class="stop-btn" id="stopBtn" onclick="stopAttack()" disabled>■ Stop</button>
+      </div>
+
+      <!-- Live threat stats (from Socket.io) -->
+      <div class="panel">
+        <div class="panel-title">📡 Live Gateway Events</div>
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-val green" id="s200">0</div><div class="stat-lbl">200 OK</div></div>
+          <div class="stat-box"><div class="stat-val amber" id="s429">0</div><div class="stat-lbl">429 Limit</div></div>
+          <div class="stat-box"><div class="stat-val red"   id="s403">0</div><div class="stat-lbl">403 Block</div></div>
+          <div class="stat-box"><div class="stat-val red"   id="s401">0</div><div class="stat-lbl">401 Auth</div></div>
+        </div>
+        <div class="threat-list" id="threatList">
+          <div class="threat-empty">No threats yet — run an attack</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Terminal + IP table -->
+    <div class="right-col">
+
+      <!-- Dual-Axis Entities Monitor -->
+      <div class="entities-split">
+        <!-- IPs -->
+        <div class="ip-panel split-panel">
+          <div class="ip-header">
+            <span>🌐 Network Engine (IPs)</span>
+            <button class="refresh-ip-btn" onclick="loadIPs()">↻ Refresh</button>
+          </div>
+          <div class="ip-scroll">
+            <table class="ip-table">
+              <thead><tr><th>IP Filter</th><th>Errors</th><th>Risk Score</th><th>Status</th></tr></thead>
+              <tbody id="ipTableBody"><tr><td colspan="4" class="empty-row">Waiting for traffic…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- JWT Users -->
+        <div class="ip-panel split-panel">
+          <div class="ip-header">
+            <span style="color: var(--purple);">👤 Identity Engine (JWT Users)</span>
+          </div>
+          <div class="ip-scroll">
+            <table class="ip-table">
+              <thead><tr><th>User (JWT)</th><th>Errors</th><th>Risk Score</th><th>Status</th></tr></thead>
+              <tbody id="userTableBody"><tr><td colspan="4" class="empty-row">Waiting for auth…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal output -->
+      <div class="terminal-wrap">
+        <div class="term-header">
+          <span class="term-title">attack.py output</span>
+          <div class="term-actions">
+            <span id="procStatus" class="proc-status">idle</span>
+            <button class="term-clear" onclick="clearTerm()">⌫ Clear</button>
+          </div>
+        </div>
+        <div class="terminal" id="terminal">
+          <span class="t-dim"># Python Attacker Terminal</span><br>
+          <span class="t-dim"># Select a mode and click Run to stream attack.py output here</span><br>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

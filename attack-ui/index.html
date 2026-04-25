@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecOps — Attack Simulator</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+
+    <!-- ── HEADER ── -->
+    <header class="topbar">
+      <div class="title-wrap">
+        <div class="skull">⚔️</div>
+        <div>
+          <h1>Attack Simulator</h1>
+          <p class="sub">SecOps Gateway — Live Threat Demonstration</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <a href="/dashboard/" class="btn-link">← Dashboard</a>
+        <div class="conn-pill" id="connPill">
+          <span class="dot" id="connDot"></span>
+          <span id="connText">Connecting…</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── MAIN GRID ── -->
+    <div class="main-grid">
+
+      <!-- LEFT: CONTROLS ── -->
+      <aside class="controls">
+
+        <!-- Demo Mode -->
+        <div class="panel demo-panel">
+          <div class="panel-head">
+            <span class="panel-icon">🎬</span>
+            <h2>Full Demo Mode</h2>
+          </div>
+          <p class="panel-desc">Runs all 5 attack phases sequentially. Open the Dashboard and watch live.</p>
+          <div class="phase-list" id="phaseList">
+            <div class="phase-item" id="ph-NORMAL">      <span class="ph-dot"></span> Phase 1 — Normal Traffic</div>
+            <div class="phase-item" id="ph-RATE_ABUSE">  <span class="ph-dot"></span> Phase 2 — Rate Abuse</div>
+            <div class="phase-item" id="ph-BRUTE_FORCE"> <span class="ph-dot"></span> Phase 3 — Brute Force</div>
+            <div class="phase-item" id="ph-BROKEN_AUTH"> <span class="ph-dot"></span> Phase 4 — Broken Auth</div>
+            <div class="phase-item" id="ph-DOS">         <span class="ph-dot"></span> Phase 5 — DoS Flood</div>
+          </div>
+          <button class="big-btn demo-btn" id="demoBtn" onclick="runDemo()">▶  Run Full Demo</button>
+        </div>
+
+        <!-- Individual Attacks -->
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-icon">🎯</span>
+            <h2>Individual Attacks</h2>
+          </div>
+
+          <div class="attack-card normal">
+            <div class="atk-head">
+              <span class="atk-badge green">SAFE</span>
+              <span class="atk-name">Normal Traffic</span>
+            </div>
+            <p>Legitimate requests at ~5 req/s. Baseline for comparison.</p>
+            <button class="atk-btn" onclick="attack('normal', {count:20})">Send 20 Requests</button>
+          </div>
+
+          <div class="attack-card rate">
+            <div class="atk-head">
+              <span class="atk-badge amber">RATE ABUSE</span>
+              <span class="atk-name">Single IP Flood</span>
+            </div>
+            <p>One IP sends 80+ requests/s — triggers RATE_LIMIT, RATE_ABUSE, and IP_BLOCKED.</p>
+            <button class="atk-btn" onclick="attack('rate-abuse', {count:80})">Launch Rate Abuse</button>
+          </div>
+
+          <div class="attack-card brute">
+            <div class="atk-head">
+              <span class="atk-badge purple">BRUTE FORCE</span>
+              <span class="atk-name">Credential Stuffing</span>
+            </div>
+            <p>25 different IPs try common username/password combos. Triggers BRUTE_FORCE after 5 failures from same IP.</p>
+            <button class="atk-btn" onclick="attack('brute-force', {count:25})">Launch Brute Force</button>
+          </div>
+
+          <div class="attack-card broken">
+            <div class="atk-head">
+              <span class="atk-badge orange">BROKEN AUTH</span>
+              <span class="atk-name">JWT Exploitation</span>
+            </div>
+            <p>Sends expired, weak (predictable), and forged tokens — triggers BROKEN_AUTH alerts.</p>
+            <div class="token-demo">
+              <button class="token-btn" onclick="fetchToken('expired-token')">Get Expired Token</button>
+              <button class="token-btn" onclick="fetchToken('weak-token')">Get Weak Token</button>
+              <button class="token-btn" onclick="fetchToken('forged-token')">Get Forged Token</button>
+            </div>
+            <button class="atk-btn" onclick="attack('broken-auth', {types:['expired','weak','forged']})">Launch Auth Attack</button>
+          </div>
+
+          <div class="attack-card dos">
+            <div class="atk-head">
+              <span class="atk-badge red">DoS ATTACK</span>
+              <span class="atk-name">Distributed Flood</span>
+            </div>
+            <p>60 different IPs simultaneously flood the API — triggers global DOS_ATTACK alert and blocks IPs.</p>
+            <button class="atk-btn" onclick="attack('dos', {threads:60, burst:5})">Launch DoS Flood</button>
+          </div>
+        </div>
+
+        <!-- Token Inspector -->
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-icon">🔑</span>
+            <h2>JWT Token Inspector</h2>
+          </div>
+          <p class="panel-desc">Test tokens and see how the gateway responds.</p>
+          <div class="token-input-row">
+            <input type="text" id="customToken" placeholder="Paste token here…" class="token-input">
+            <button class="atk-btn small" onclick="testToken()">Test →</button>
+          </div>
+          <div class="token-result" id="tokenResult"></div>
+        </div>
+
+      </aside>
+
+      <!-- RIGHT: LIVE FEED ── -->
+      <main class="feed-panel">
+        <div class="feed-header">
+          <div>
+            <h2>Live Attack Feed</h2>
+            <p class="sub">Real-time results from the gateway middleware chain</p>
+          </div>
+          <div class="feed-controls">
+            <div class="counter-row">
+              <div class="mini-counter"><span id="fcSent">0</span><label>Sent</label></div>
+              <div class="mini-counter ok"><span id="fcOk">0</span><label>200 OK</label></div>
+              <div class="mini-counter warn"><span id="fcLim">0</span><label>429 Limited</label></div>
+              <div class="mini-counter err"><span id="fcBlocked">0</span><label>403 Blocked</label></div>
+            </div>
+            <button class="clear-btn" onclick="clearFeed()">Clear</button>
+          </div>
+        </div>
+
+        <!-- Blocked IPs panel -->
+        <div class="blocked-panel">
+          <div class="blocked-head">
+            <span>🚫 Currently Blocked IPs</span>
+            <button class="refresh-btn" onclick="loadBlockedIPs()">↻ Refresh</button>
+          </div>
+          <div class="blocked-list" id="blockedList">
+            <span class="empty-blocked">No IPs currently blocked</span>
+          </div>
+        </div>
+
+        <!-- Terminal feed -->
+        <div class="terminal" id="terminal">
+          <div class="terminal-line muted"># SecOps Attack Simulator — Ready</div>
+          <div class="terminal-line muted"># Select an attack from the left panel or run Full Demo</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
