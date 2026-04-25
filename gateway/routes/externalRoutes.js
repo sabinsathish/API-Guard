@@ -8,34 +8,24 @@
  */
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
-const router  = express.Router();
+const router = express.Router();
 
 // ── JSONPlaceholder proxy ────────────────────────────────────────────────────
 const jsonPlaceholderProxy = createProxyMiddleware({
-  target:      'https://jsonplaceholder.typicode.com',
+  target: 'https://jsonplaceholder.typicode.com',
   changeOrigin: true,
-  pathRewrite:  { '^/api/external': '' },
+  pathRewrite: { '^/api/external': '' },
   on: {
-    proxyReq: (proxyReq, req) => {
-      req.extProviderName = 'JSONPlaceholder';
-      req.extProviderHost = 'https://jsonplaceholder.typicode.com';
-      req.sourceType = 'static_external';
-    },
     error: (err, req, res) => res.status(502).json({ error: 'JSONPlaceholder unavailable', detail: err.message })
   }
 });
 
 // ── DummyJSON proxy ────────────────────────────────────────────────────────
 const dummyJsonProxy = createProxyMiddleware({
-  target:      'https://dummyjson.com',
+  target: 'https://dummyjson.com',
   changeOrigin: true,
-  pathRewrite:  { '^/api/external/store': '' },
+  pathRewrite: { '^/api/external/store': '' },
   on: {
-    proxyReq: (proxyReq, req) => {
-      req.extProviderName = 'DummyJSON';
-      req.extProviderHost = 'https://dummyjson.com';
-      req.sourceType = 'static_external';
-    },
     error: (err, req, res) => res.status(502).json({ error: 'DummyJSON unavailable', detail: err.message })
   }
 });
@@ -52,12 +42,12 @@ router.use('/store', dummyJsonProxy);
 
 router.use('/:service', (req, res, next) => {
   const service = req.params.service;
-  
+
   // If requesting a hardcoded route that somehow got here, skip handles
   if (service === 'store') return next();
 
   const apiConfig = registryService.getApiConfig(service);
-  
+
   if (!apiConfig) {
     // Before introducing dynamic APIs, all other traffic went to jsonPlaceholderProxy.
     // To preserve 100% backward compatibility, we MUST proxy to JSONPlaceholder if not found in registry.

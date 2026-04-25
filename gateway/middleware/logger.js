@@ -11,25 +11,20 @@ const logger = (req, res, next) => {
   res.on('finish', async () => {
     const responseMs = Date.now() - startMs;
     const entry = {
-      ip:         req.clientIp || req.ip || '0.0.0.0',
-      endpoint:   req.originalUrl || req.url,
-      method:     req.method,
-      status:     res.statusCode,
+      ip: req.clientIp || req.ip || '0.0.0.0',
+      endpoint: req.originalUrl || req.url,
+      method: req.method,
+      status: res.statusCode,
       responseMs,
-      userAgent:  req.get('user-agent') || '',
+      userAgent: req.get('user-agent') || '',
       threatType: req.threatType || 'NONE',
-      provider:   req.extProviderName || 'system',
+      provider: req.extProviderName || 'system',
       sourceType: req.sourceType || 'static_route',
       targetHost: req.extProviderHost || ''
     };
 
     // Save to MongoDB (fire-and-forget)
-    try { 
-      await Log.create(entry); 
-      console.log(`[Logger] Saved request: ${entry.method} ${entry.endpoint} (${res.statusCode})`);
-    } catch (err) {
-      console.error(`[Logger] Failed to save log: ${err.message}`);
-    }
+    try { await Log.create(entry); } catch (_) { }
 
     // Push to dashboard
     const io = getIo();

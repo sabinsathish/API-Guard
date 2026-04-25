@@ -3,7 +3,7 @@ if (!sessionStorage.getItem('jwt')) {
   window.location.href = '/login/';
 }
 
-window.logout = function() {
+window.logout = function () {
   sessionStorage.clear();
   window.location.href = '/login/';
 };
@@ -11,11 +11,11 @@ window.logout = function() {
 function syncUserProfile() {
   const username = sessionStorage.getItem('username') || 'Guest';
   const role = sessionStorage.getItem('role') || 'viewer';
-  
+
   const avatar = document.querySelector('.user-profile .avatar');
   const nameEl = document.querySelector('.user-profile div div:first-child');
   const roleEl = document.querySelector('.user-profile div div:last-child');
-  
+
   if (avatar) avatar.textContent = username.charAt(0).toUpperCase();
   if (nameEl) nameEl.textContent = username;
   if (roleEl) roleEl.textContent = role.toUpperCase();
@@ -47,13 +47,13 @@ const $ = id => document.getElementById(id);
 function switchView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  
+
   const viewEl = $(`view-${name}`);
   const navEl = $(`nav-${name}`);
-  
+
   if (viewEl) viewEl.classList.add('active');
   if (navEl) navEl.classList.add('active');
-  
+
   if (name === 'logs') fetchLogs();
   if (name === 'apis') fetchApis();
 }
@@ -64,11 +64,11 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
 
 // ── Socket.io status ────────────────────────────────────────────────────────
 socket.on('connect', () => {
-  $('connDot').className   = 'dot connected';
+  $('connDot').className = 'dot connected';
   $('connLabel').textContent = 'Connected';
 });
 socket.on('disconnect', () => {
-  $('connDot').className   = 'dot error';
+  $('connDot').className = 'dot error';
   $('connLabel').textContent = 'Disconnected';
 });
 
@@ -82,10 +82,10 @@ tGrad.addColorStop(1, 'transparent');
 const trafficChart = new Chart(trafficCtx, {
   type: 'line',
   data: {
-    labels:   Array(30).fill(''),
+    labels: Array(30).fill(''),
     datasets: [{
       label: 'req/s',
-      data:  Array(30).fill(0),
+      data: Array(30).fill(0),
       borderColor: accentColor,
       backgroundColor: tGrad,
       borderWidth: 2.5,
@@ -159,15 +159,15 @@ socket.on('traffic', data => {
   state.totalReq++;
 
   const s = data.status;
-  if      (s >= 500) { statusCounts['5xx']++; state.failedReq++; }
+  if (s >= 500) { statusCounts['5xx']++; state.failedReq++; }
   else if (s >= 400) { statusCounts['4xx']++; state.failedReq++; }
-  else               { statusCounts['2xx']++; }
+  else { statusCounts['2xx']++; }
 
   // Update chart chip based on RPS
   const chip = $('chartMode');
-  if (state.rps > 30)      { chip.textContent = 'UNDER ATTACK'; chip.className = 'chip danger'; }
-  else if (state.rps > 10) { chip.textContent = 'ELEVATED';     chip.className = 'chip warning'; }
-  else                     { chip.textContent = 'NORMAL';       chip.className = 'chip'; }
+  if (state.rps > 30) { chip.textContent = 'UNDER ATTACK'; chip.className = 'chip danger'; }
+  else if (state.rps > 10) { chip.textContent = 'ELEVATED'; chip.className = 'chip warning'; }
+  else { chip.textContent = 'NORMAL'; chip.className = 'chip'; }
 });
 
 // ── Threat event ──────────────────────────────────────────────────────────────
@@ -179,23 +179,23 @@ socket.on('threat', data => {
   // Update KPIs
   $('kThreats').textContent = state.totalThreats;
   $('kBlocked').textContent = state.blocked;
-  
+
   // Update badge
   const badge = $('threatBadge');
   badge.textContent = state.totalThreats;
 
   // Update threat type counters
-  $('tc-rateLimit').textContent  = state.threats.RATE_LIMIT   || 0;
-  $('tc-rateAbuse').textContent  = state.threats.RATE_ABUSE   || 0;
-  $('tc-brute').textContent      = state.threats.BRUTE_FORCE  || 0;
-  $('tc-dos').textContent        = state.threats.DOS_ATTACK   || 0;
-  $('tc-blocked').textContent    = state.blocked;
+  $('tc-rateLimit').textContent = state.threats.RATE_LIMIT || 0;
+  $('tc-rateAbuse').textContent = state.threats.RATE_ABUSE || 0;
+  $('tc-brute').textContent = state.threats.BRUTE_FORCE || 0;
+  $('tc-dos').textContent = state.threats.DOS_ATTACK || 0;
+  $('tc-blocked').textContent = state.blocked;
 
   // Refresh actual blocked IPs count from gateway
   fetch('http://localhost:3000/api/blocked-ips')
     .then(r => r.json())
     .then(list => { state.blocked = list.length; $('kBlocked').textContent = state.blocked; $('tc-blocked').textContent = state.blocked; })
-    .catch(() => {});
+    .catch(() => { });
 
   const item = makeEventItem(data);
 
@@ -210,15 +210,15 @@ socket.on('threat', data => {
   const at = $('allThreats');
   const emptyAt = at.querySelector('.empty');
   if (emptyAt) emptyAt.remove();
-  
+
   // Give it an ID so we can update it later if it doesn't have one
   const safeId = data.ip ? data.ip.replace(/[^a-zA-Z0-9]/g, '-') : 'unknown';
   const existing = document.getElementById(`live-threat-${safeId}`);
   if (existing) {
-     existing.remove(); // Remove old one to bump it to the top
+    existing.remove(); // Remove old one to bump it to the top
   }
   item.id = `live-threat-${safeId}`;
-  
+
   at.insertBefore(item, at.firstChild);
   while (at.children.length > 200) at.lastChild.remove();
 });
@@ -227,10 +227,10 @@ socket.on('threat', data => {
 socket.on('score_update', data => {
   const safeId = data.entityId.replace(/[^a-zA-Z0-9]/g, '-');
   let div = document.getElementById(`live-threat-${safeId}`);
-  
+
   if (!div) {
     if (data.finalScore <= 5) return; // Ignore very low noise
-    
+
     // Create new tracking item
     const mockData = {
       type: data.level || 'SUSPICIOUS',
@@ -244,7 +244,7 @@ socket.on('score_update', data => {
     };
     div = makeEventItem(mockData);
     div.id = `live-threat-${safeId}`;
-    
+
     const at = $('allThreats');
     const emptyAt = at.querySelector('.empty');
     if (emptyAt) emptyAt.remove();
@@ -263,7 +263,7 @@ socket.on('score_update', data => {
     const existingScores = bodyEl.querySelector('.threat-scores');
     if (existingScores) existingScores.outerHTML = scoresHtml;
     else bodyEl.insertAdjacentHTML('beforeend', scoresHtml);
-    
+
     if (data.reason) {
       const reasonEl = div.querySelector('.event-body > div:nth-child(2)');
       if (reasonEl) reasonEl.textContent = data.reason;
@@ -276,7 +276,7 @@ function makeEventItem(data) {
   div.className = 'event-item';
   const tagClass = data.type || 'RATE_LIMIT';
   const statusColor = data.status >= 500 ? 'status-err' : 'status-lim';
-  
+
   // Format hybrid scores if they exist
   let scoresHtml = '';
   if (data.ruleScore !== undefined) {
@@ -290,7 +290,7 @@ function makeEventItem(data) {
   }
 
   div.innerHTML = `
-    <span class="event-tag ${tagClass}">${data.type.replace(/_/g,' ')}</span>
+    <span class="event-tag ${tagClass}">${data.type.replace(/_/g, ' ')}</span>
     <div class="event-body" style="width:100%;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
         <div class="event-ip">${data.ip}</div>
@@ -307,7 +307,7 @@ function makeEventItem(data) {
 // ── Log table ─────────────────────────────────────────────────────────────────
 async function fetchLogs() {
   try {
-    const res  = await fetch('http://localhost:3000/logs');
+    const res = await fetch('http://localhost:3000/logs');
     const logs = await res.json();
     const tbody = $('logTableBody');
     if (!logs.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-cell">No logs yet</td></tr>'; return; }
@@ -319,10 +319,10 @@ async function fetchLogs() {
         <td>${l.method}</td>
         <td>${l.endpoint}</td>
         <td class="${sc}">${l.status}</td>
-        <td>${l.threatType !== 'NONE' ? `<span class="event-tag ${l.threatType}">${l.threatType.replace(/_/g,' ')}</span>` : '—'}</td>
+        <td>${l.threatType !== 'NONE' ? `<span class="event-tag ${l.threatType}">${l.threatType.replace(/_/g, ' ')}</span>` : '—'}</td>
       </tr>`;
     }).join('');
-  } catch(e) {
+  } catch (e) {
     $('logTableBody').innerHTML = '<tr><td colspan="6" class="empty-cell">Could not load logs</td></tr>';
   }
 }
@@ -335,7 +335,7 @@ function clearThreats() {
   Object.keys(state.threats).forEach(k => state.threats[k] = 0);
   $('kThreats').textContent = 0; $('kBlocked').textContent = 0;
   $('threatBadge').textContent = 0;
-  ['tc-rateLimit','tc-rateAbuse','tc-brute','tc-dos','tc-blocked'].forEach(id => $(id).textContent = 0);
+  ['tc-rateLimit', 'tc-rateAbuse', 'tc-brute', 'tc-dos', 'tc-blocked'].forEach(id => $(id).textContent = 0);
 }
 
 // ── Dynamic APIs ──────────────────────────────────────────────────────────────
@@ -346,13 +346,13 @@ async function fetchApis() {
     });
     if (!res.ok) throw new Error('Failed to fetch APIs');
     const apis = await res.json();
-    
+
     const list = $('apiList');
     if (!apis.length) {
       list.innerHTML = '<div class="empty">No dynamic APIs registered yet.</div>';
       return;
     }
-    
+
     list.innerHTML = apis.map(api => `
       <div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--bg);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -375,18 +375,18 @@ async function registerApi(e) {
   e.preventDefault();
   const alertBox = $('apiAlert');
   alertBox.style.display = 'none';
-  
+
   const btn = $('apiSubmitBtn');
   btn.disabled = true;
   btn.textContent = 'Registering...';
-  
+
   const data = {
     name: $('apiName').value.trim(),
     target: $('apiTarget').value.trim(),
     apiKey: $('apiKey').value.trim(),
     headerName: $('apiHeader').value.trim()
   };
-  
+
   try {
     const res = await fetch('http://localhost:3000/admin/register-api', {
       method: 'POST',
@@ -396,16 +396,16 @@ async function registerApi(e) {
       },
       body: JSON.stringify(data)
     });
-    
+
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Failed to register API');
-    
+
     alertBox.style.display = 'block';
     alertBox.style.background = 'var(--green-bg)';
     alertBox.style.color = 'var(--green)';
     alertBox.style.border = '1px solid rgba(16,201,132,.3)';
     alertBox.textContent = '✅ API successfully registered!';
-    
+
     // Clear form
     e.target.reset();
     fetchApis();
@@ -422,7 +422,7 @@ async function registerApi(e) {
 }
 
 socket.on('api_registered', (apis) => {
-    if ($('view-apis') && $('view-apis').classList.contains('active')) {
+  if ($('view-apis') && $('view-apis').classList.contains('active')) {
     fetchApis();
   }
 });

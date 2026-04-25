@@ -1,26 +1,26 @@
 require('dotenv').config();
-const express    = require('express');
-const http       = require('http');
-const path       = require('path');
-const cors       = require('cors');
-const mongoose   = require('mongoose');
+const express = require('express');
+const http = require('http');
+const path = require('path');
+const cors = require('cors');
+const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
-const fs         = require('fs');
+const fs = require('fs');
 
-const socketService    = require('./services/socketService');
-const metricsService   = require('./services/metricsService');
-const ipBlocker        = require('./middleware/ipBlocker');
-const logger           = require('./middleware/logger');
-const rateLimiter      = require('./middleware/rateLimiter');
-const authMiddleware   = require('./middleware/auth');
+const socketService = require('./services/socketService');
+const metricsService = require('./services/metricsService');
+const ipBlocker = require('./middleware/ipBlocker');
+const logger = require('./middleware/logger');
+const rateLimiter = require('./middleware/rateLimiter');
+const authMiddleware = require('./middleware/auth');
 const threatIdentifier = require('./middleware/threatIdentifier');
 
-const authRoutes     = require('./routes/authRoutes');
-const internalProxy  = require('./routes/internalRoutes');
+const authRoutes = require('./routes/authRoutes');
+const internalProxy = require('./routes/internalRoutes');
 const externalRoutes = require('./routes/externalRoutes');
-const attackRoutes   = require('./routes/attackRoutes');
+const attackRoutes = require('./routes/attackRoutes');
 
-const app    = express();
+const app = express();
 const server = http.createServer(app);
 
 // ── Trust proxy (for X-Forwarded-For in multi-IP attack simulation) ───────────
@@ -30,7 +30,7 @@ app.set('trust proxy', true);
 socketService.init(server);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: '*', methods: ['GET','POST','PUT','DELETE','PATCH','OPTIONS'] }));
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'] }));
 
 // Hide Express fingerprint
 app.disable('x-powered-by');
@@ -39,8 +39,8 @@ app.disable('x-powered-by');
 app.use((req, res, next) => {
   res.on('finish', () => {
     const source = req.path.startsWith('/api/internal') ? 'internal'
-                 : req.path.startsWith('/api/external') ? 'external'
-                 : null;
+      : req.path.startsWith('/api/external') ? 'external'
+        : null;
     if (source) metricsService.record({ ip: req.clientIp || req.ip, path: req.path, status: res.statusCode, source });
   });
   next();
@@ -55,10 +55,10 @@ app.use(threatIdentifier);
 
 // ── Static pages ──────────────────────────────────────────────────────────────
 app.get('/', (_, res) => res.redirect('/login/'));
-app.use('/login',      express.static(path.join(__dirname, '../login')));
-app.use('/dashboard',  express.static(path.join(__dirname, '../dashboard')));
-app.use('/attack',     express.static(path.join(__dirname, '../attack-ui')));
-app.use('/attacker',   express.static(path.join(__dirname, '../attacker-ui')));
+app.use('/login', express.static(path.join(__dirname, '../login')));
+app.use('/dashboard', express.static(path.join(__dirname, '../dashboard')));
+app.use('/attack', express.static(path.join(__dirname, '../attack-ui')));
+app.use('/attacker', express.static(path.join(__dirname, '../attacker-ui')));
 app.use('/api-tester', express.static(path.join(__dirname, '../api-tester')));
 
 // ── Auth & Admin routes ────────────────────────────────────────────────────────
@@ -94,39 +94,25 @@ app.use((req, res) => res.status(404).json({ error: `Route not found: ${req.meth
 // ── DATABASE + START ──────────────────────────────────────────────────────────
 const startServer = async () => {
   try {
-    // Database Connection Strategy:
-    // 1. Try local MongoDB (27017) first (most stable)
-    // 2. Fallback to portable database (27018) if local is missing
     const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/secureGateway';
-    
     try {
-      console.log('🔗 Connecting to MongoDB…');
       await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 2000 });
       console.log('✅ Persistent MongoDB connected!');
-    } catch (err) {
-      console.log('⚠️  Local MongoDB not found — starting portable database…');
-      const baseDbPath = path.join(__dirname, '../database');
-      const dataPath = path.join(baseDbPath, 'data');
-      if (!fs.existsSync(baseDbPath)) fs.mkdirSync(baseDbPath);
-      if (!fs.existsSync(dataPath)) fs.mkdirSync(dataPath);
-      
-      try {
-        const mongod = await MongoMemoryServer.create({ 
-          instance: { 
-            dbPath: dataPath, 
-            storageEngine: 'wiredTiger',
-            port: 27018 
-          },
-          binary: { version: '6.0.5' }
-        });
-        const uri = mongod.getUri();
-        await mongoose.connect(uri, { dbName: 'secureGateway' });
-        console.log(`✅ Portable DB started! Data at: ${dataPath}`);
-      } catch (portableErr) {
-        console.error('❌ Portable DB Error:', portableErr.message);
-        console.log('💡 TIP: If you see "SyntaxError" above, it is a known bug with Node 25. Please use a local MongoDB on 27017 instead.');
-        process.exit(1);
-      }
+    } catch {
+      console.log('⚠️  MongoDB not found — starting portable database…');
+      const dbPath = path.join(__dirname, '../database');
+      if (!fs.existsSync(dbPath)) fs.mkdirSync(dbPath);
+      const mongod = await MongoMemoryServer.create({
+        instance: {
+          dbPath,
+          storageEngine: 'wiredTiger',
+          port: 27018 // Fixed port for consistency
+        }
+      });
+      const uri = mongod.getUri();
+      await mongoose.connect(uri, { dbName: 'secureGateway' });
+      console.log(`✅ Portable DB started! Data at: ${dbPath}`);
+      console.log(`🔗 Connect via MongoDB Compass: ${uri}`);
     }
 
     const { seedDefaultUser } = require('./models/User');
@@ -148,16 +134,16 @@ const startServer = async () => {
   ║  EXTERNAL API : /api/external/* → JSONPlaceholder/Dummy  ║
   ╚══════════════════════════════════════════════════════════╝
       `);
-      
+
       // Auto-start ML Prediction microservice
       const { spawn } = require('child_process');
       const mlScript = path.join(__dirname, '../ml/predict.py');
       const mlProc = spawn('python', ['-u', mlScript]);
-      
+
       mlProc.stdout.on('data', d => console.log(`[ML-Service] ${d.toString().trim()}`));
       mlProc.stderr.on('data', d => console.error(`[ML-Service] ${d.toString().trim()}`));
       mlProc.on('error', err => console.error('[ML-Service] Failed to start Python server. Is python installed?', err.message));
-      
+
       process.on('SIGINT', () => { mlProc.kill(); process.exit(); });
       process.on('SIGTERM', () => { mlProc.kill(); process.exit(); });
     });

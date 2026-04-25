@@ -7,17 +7,13 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
 
 const internalProxy = createProxyMiddleware({
-  target:      BACKEND_URL,
+  target: BACKEND_URL,
   changeOrigin: true,
-  pathRewrite:  { '^/api/internal': '' },
+  pathRewrite: { '^/api/internal': '' },
 
   // Inject user context headers so backend can trust them
   on: {
     proxyReq: (proxyReq, req) => {
-      req.extProviderName = 'Internal-Backend';
-      req.extProviderHost = BACKEND_URL;
-      req.sourceType = 'internal_proxy';
-
       if (req.forwardedUserHeaders) {
         Object.entries(req.forwardedUserHeaders).forEach(([k, v]) => {
           proxyReq.setHeader(k, v);

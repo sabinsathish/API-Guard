@@ -4,14 +4,14 @@ const socket = io();
 const GW = 'http://localhost:3000';
 const counts = { sent: 0, ok: 0, lim: 0, blocked: 0 };
 
-socket.on('connect',    () => { $dot('connDot', 'on'); $text('connText', 'Connected'); });
+socket.on('connect', () => { $dot('connDot', 'on'); $text('connText', 'Connected'); });
 socket.on('disconnect', () => { $dot('connDot', 'off'); $text('connText', 'Disconnected'); });
 
 // Listen to traffic events to update counters
 socket.on('traffic', data => {
   addLine(formatTrafficLine(data), lineClass(data.status));
   counts.sent++;
-  if      (data.status === 200) counts.ok++;
+  if (data.status === 200) counts.ok++;
   else if (data.status === 429) counts.lim++;
   else if (data.status === 403) counts.blocked++;
   updateCounters();
@@ -90,59 +90,23 @@ async function fetchToken(type) {
   }
 }
 
-function decodeJWT(token) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    return JSON.parse(jsonPayload);
-  } catch (e) {
-    return null;
-  }
-}
-
 async function testToken() {
   const token = document.getElementById('customToken').value.trim();
   if (!token) return;
   const el = document.getElementById('tokenResult');
-  el.textContent = 'Inspecting and validating token…';
-  
-  const decoded = decodeJWT(token);
-  let decodedHtml = '';
-  if (decoded) {
-    decodedHtml = `<div style="margin-top:8px; padding:8px; background:rgba(255,255,255,0.05); border-radius:6px; font-size:0.75rem;">
-      <div style="color:var(--muted); font-weight:700; margin-bottom:4px; text-transform:uppercase;">Decoded Payload</div>
-      <pre style="margin:0; white-space:pre-wrap;">${JSON.stringify(decoded, null, 2)}</pre>
-    </div>`;
-  } else {
-    decodedHtml = `<div style="margin-top:8px; color:var(--red); font-size:0.75rem; font-weight:600;">⚠️ This does not look like a valid JWT format.</div>`;
-  }
-
-  addLine(`> Inspecting token: ${token.substring(0, 40)}…`, 'info');
-  
+  el.textContent = 'Testing token against /api/posts…';
+  addLine(`> Testing token: ${token.substring(0, 40)}…`, 'info');
   try {
-    const r = await fetch(`${GW}/auth/verify`, {
-      method: 'GET',
+    const r = await fetch(`${GW}/api/posts/1`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const d = await r.json();
-    
-    if (r.ok && d.valid) {
-      el.innerHTML = `<span style="color:var(--green); font-weight:700; font-size:1rem;">✅ VALID TOKEN</span>\n${decodedHtml}`;
-      addLine(`  ✓ Token verified: OK`, 'ok');
+    if (r.ok) {
+      el.textContent = `✅ Token ACCEPTED (${r.status})\n${JSON.stringify(d, null, 2).substring(0, 200)}`;
+      addLine(`  ✓ Token accepted (${r.status})`, 'ok');
     } else {
-      const errMsg = d.error || 'Unknown error';
-      let statusText = 'INVALID TOKEN';
-      
-      // Granular error labeling
-      if (errMsg.includes('malformed')) statusText = 'NOT A TOKEN (Malformed)';
-      else if (errMsg.includes('signature')) statusText = 'INVALID SIGNATURE';
-      else if (errMsg.includes('expired')) statusText = 'TOKEN EXPIRED';
-
-      el.innerHTML = `<span style="color:var(--red); font-weight:700; font-size:1rem;">❌ ${statusText}</span>\n<div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">Server Error: ${errMsg}</div>\n${decodedHtml}`;
-      addLine(`  ✗ ${statusText}: ${errMsg}`, 'err');
+      el.textContent = `❌ Token REJECTED (${r.status})\n${JSON.stringify(d, null, 2)}`;
+      addLine(`  ✗ Token rejected: ${d.error} (${r.status})`, 'err');
     }
   } catch (e) {
     el.textContent = `Error: ${e.message}`;
@@ -152,9 +116,9 @@ async function testToken() {
 // ── Blocked IPs ───────────────────────────────────────────────────────────────
 async function loadBlockedIPs() {
   try {
-    const r    = await fetch(`${GW}/api/blocked-ips`);
+    const r = await fetch(`${GW}/api/blocked-ips`);
     const list = await r.json();
-    const el   = document.getElementById('blockedList');
+    const el = document.getElementById('blockedList');
     if (!list.length) {
       el.innerHTML = '<span class="empty-blocked">No IPs currently blocked</span>';
       return;
@@ -172,7 +136,7 @@ loadBlockedIPs();
 // ── Terminal helpers ──────────────────────────────────────────────────────────
 function addLine(text, cls = '') {
   const term = document.getElementById('terminal');
-  const div  = document.createElement('div');
+  const div = document.createElement('div');
   div.className = `terminal-line ${cls}`;
   div.textContent = text;
   term.appendChild(div);
@@ -189,31 +153,31 @@ function formatTrafficLine(d) {
 }
 
 function formatThreatLine(d) {
-  const ts     = new Date(d.time).toLocaleTimeString();
-  const sub    = d.subtype ? ` (${d.subtype})` : '';
-  const detail = d.detail  ? ` — ${d.detail}`  : '';
+  const ts = new Date(d.time).toLocaleTimeString();
+  const sub = d.subtype ? ` (${d.subtype})` : '';
+  const detail = d.detail ? ` — ${d.detail}` : '';
   return `[${ts}] ⚠ ${d.type}${sub}  IP: ${d.ip}  HTTP ${d.status}${detail}`;
 }
 
 function lineClass(status) {
   if (status === 200) return 'ok';
   if (status === 429) return 'warn';
-  if (status >= 400)  return 'err';
+  if (status >= 400) return 'err';
   return '';
 }
 
 function threatClass(type) {
-  if (['RATE_ABUSE','DOS_ATTACK','IP_BLOCKED','BLOCKED_IP_ACCESS'].includes(type)) return 'err';
-  if (['RATE_LIMIT'].includes(type))  return 'warn';
+  if (['RATE_ABUSE', 'DOS_ATTACK', 'IP_BLOCKED', 'BLOCKED_IP_ACCESS'].includes(type)) return 'err';
+  if (['RATE_LIMIT'].includes(type)) return 'warn';
   if (['BRUTE_FORCE'].includes(type)) return 'purple';
   if (['BROKEN_AUTH'].includes(type)) return 'orange';
   return 'info';
 }
 
 function updateCounters() {
-  document.getElementById('fcSent').textContent    = counts.sent;
-  document.getElementById('fcOk').textContent      = counts.ok;
-  document.getElementById('fcLim').textContent     = counts.lim;
+  document.getElementById('fcSent').textContent = counts.sent;
+  document.getElementById('fcOk').textContent = counts.ok;
+  document.getElementById('fcLim').textContent = counts.lim;
   document.getElementById('fcBlocked').textContent = counts.blocked;
 }
 
@@ -225,5 +189,5 @@ function clearFeed() {
 }
 
 // ── DOM helpers ────────────────────────────────────────────────────────────────
-function $dot(id, cls)  { const e = document.getElementById(id); e.className = `dot ${cls}`; }
+function $dot(id, cls) { const e = document.getElementById(id); e.className = `dot ${cls}`; }
 function $text(id, txt) { document.getElementById(id).textContent = txt; }
