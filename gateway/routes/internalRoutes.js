@@ -14,6 +14,10 @@ const internalProxy = createProxyMiddleware({
   // Inject user context headers so backend can trust them
   on: {
     proxyReq: (proxyReq, req) => {
+      req.extProviderName = 'Internal-Backend';
+      req.extProviderHost = BACKEND_URL;
+      req.sourceType = 'internal_proxy';
+
       if (req.forwardedUserHeaders) {
         Object.entries(req.forwardedUserHeaders).forEach(([k, v]) => {
           proxyReq.setHeader(k, v);

@@ -1,6 +1,6 @@
 const ThreatEngine = require('../services/threatEngine');
 
-const PUBLIC = ['/auth', '/health', '/logs', '/dashboard', '/socket.io', '/', '/attack', '/demo', '/api/blocked-ips'];
+const PUBLIC = ['/auth', '/health', '/logs', '/socket.io', '/api/blocked-ips'];
 
 const ipBlocker = (req, res, next) => {
   // Respects X-Forwarded-For when trust proxy is on

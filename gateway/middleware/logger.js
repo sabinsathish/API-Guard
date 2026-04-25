@@ -24,7 +24,12 @@ const logger = (req, res, next) => {
     };
 
     // Save to MongoDB (fire-and-forget)
-    try { await Log.create(entry); } catch (_) {}
+    try { 
+      await Log.create(entry); 
+      console.log(`[Logger] Saved request: ${entry.method} ${entry.endpoint} (${res.statusCode})`);
+    } catch (err) {
+      console.error(`[Logger] Failed to save log: ${err.message}`);
+    }
 
     // Push to dashboard
     const io = getIo();

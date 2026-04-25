@@ -90,23 +90,59 @@ async function fetchToken(type) {
   }
 }
 
+function decodeJWT(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
 async function testToken() {
   const token = document.getElementById('customToken').value.trim();
   if (!token) return;
   const el = document.getElementById('tokenResult');
-  el.textContent = 'Testing token against /api/posts…';
-  addLine(`> Testing token: ${token.substring(0, 40)}…`, 'info');
+  el.textContent = 'Inspecting and validating token…';
+  
+  const decoded = decodeJWT(token);
+  let decodedHtml = '';
+  if (decoded) {
+    decodedHtml = `<div style="margin-top:8px; padding:8px; background:rgba(255,255,255,0.05); border-radius:6px; font-size:0.75rem;">
+      <div style="color:var(--muted); font-weight:700; margin-bottom:4px; text-transform:uppercase;">Decoded Payload</div>
+      <pre style="margin:0; white-space:pre-wrap;">${JSON.stringify(decoded, null, 2)}</pre>
+    </div>`;
+  } else {
+    decodedHtml = `<div style="margin-top:8px; color:var(--red); font-size:0.75rem; font-weight:600;">⚠️ This does not look like a valid JWT format.</div>`;
+  }
+
+  addLine(`> Inspecting token: ${token.substring(0, 40)}…`, 'info');
+  
   try {
-    const r = await fetch(`${GW}/api/posts/1`, {
+    const r = await fetch(`${GW}/auth/verify`, {
+      method: 'GET',
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const d = await r.json();
-    if (r.ok) {
-      el.textContent = `✅ Token ACCEPTED (${r.status})\n${JSON.stringify(d, null, 2).substring(0, 200)}`;
-      addLine(`  ✓ Token accepted (${r.status})`, 'ok');
+    
+    if (r.ok && d.valid) {
+      el.innerHTML = `<span style="color:var(--green); font-weight:700; font-size:1rem;">✅ VALID TOKEN</span>\n${decodedHtml}`;
+      addLine(`  ✓ Token verified: OK`, 'ok');
     } else {
-      el.textContent = `❌ Token REJECTED (${r.status})\n${JSON.stringify(d, null, 2)}`;
-      addLine(`  ✗ Token rejected: ${d.error} (${r.status})`, 'err');
+      const errMsg = d.error || 'Unknown error';
+      let statusText = 'INVALID TOKEN';
+      
+      // Granular error labeling
+      if (errMsg.includes('malformed')) statusText = 'NOT A TOKEN (Malformed)';
+      else if (errMsg.includes('signature')) statusText = 'INVALID SIGNATURE';
+      else if (errMsg.includes('expired')) statusText = 'TOKEN EXPIRED';
+
+      el.innerHTML = `<span style="color:var(--red); font-weight:700; font-size:1rem;">❌ ${statusText}</span>\n<div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">Server Error: ${errMsg}</div>\n${decodedHtml}`;
+      addLine(`  ✗ ${statusText}: ${errMsg}`, 'err');
     }
   } catch (e) {
     el.textContent = `Error: ${e.message}`;

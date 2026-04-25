@@ -94,25 +94,39 @@ app.use((req, res) => res.status(404).json({ error: `Route not found: ${req.meth
 // ── DATABASE + START ──────────────────────────────────────────────────────────
 const startServer = async () => {
   try {
+    // Database Connection Strategy:
+    // 1. Try local MongoDB (27017) first (most stable)
+    // 2. Fallback to portable database (27018) if local is missing
     const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/secureGateway';
+    
     try {
+      console.log('🔗 Connecting to MongoDB…');
       await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 2000 });
       console.log('✅ Persistent MongoDB connected!');
-    } catch {
-      console.log('⚠️  MongoDB not found — starting portable database…');
-      const dbPath = path.join(__dirname, '../database');
-      if (!fs.existsSync(dbPath)) fs.mkdirSync(dbPath);
-      const mongod = await MongoMemoryServer.create({ 
-        instance: { 
-          dbPath, 
-          storageEngine: 'wiredTiger',
-          port: 27018 // Fixed port for consistency
-        } 
-      });
-      const uri = mongod.getUri();
-      await mongoose.connect(uri, { dbName: 'secureGateway' });
-      console.log(`✅ Portable DB started! Data at: ${dbPath}`);
-      console.log(`🔗 Connect via MongoDB Compass: ${uri}`);
+    } catch (err) {
+      console.log('⚠️  Local MongoDB not found — starting portable database…');
+      const baseDbPath = path.join(__dirname, '../database');
+      const dataPath = path.join(baseDbPath, 'data');
+      if (!fs.existsSync(baseDbPath)) fs.mkdirSync(baseDbPath);
+      if (!fs.existsSync(dataPath)) fs.mkdirSync(dataPath);
+      
+      try {
+        const mongod = await MongoMemoryServer.create({ 
+          instance: { 
+            dbPath: dataPath, 
+            storageEngine: 'wiredTiger',
+            port: 27018 
+          },
+          binary: { version: '6.0.5' }
+        });
+        const uri = mongod.getUri();
+        await mongoose.connect(uri, { dbName: 'secureGateway' });
+        console.log(`✅ Portable DB started! Data at: ${dataPath}`);
+      } catch (portableErr) {
+        console.error('❌ Portable DB Error:', portableErr.message);
+        console.log('💡 TIP: If you see "SyntaxError" above, it is a known bug with Node 25. Please use a local MongoDB on 27017 instead.');
+        process.exit(1);
+      }
     }
 
     const { seedDefaultUser } = require('./models/User');

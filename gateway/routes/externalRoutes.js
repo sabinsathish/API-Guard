@@ -16,6 +16,11 @@ const jsonPlaceholderProxy = createProxyMiddleware({
   changeOrigin: true,
   pathRewrite:  { '^/api/external': '' },
   on: {
+    proxyReq: (proxyReq, req) => {
+      req.extProviderName = 'JSONPlaceholder';
+      req.extProviderHost = 'https://jsonplaceholder.typicode.com';
+      req.sourceType = 'static_external';
+    },
     error: (err, req, res) => res.status(502).json({ error: 'JSONPlaceholder unavailable', detail: err.message })
   }
 });
@@ -26,6 +31,11 @@ const dummyJsonProxy = createProxyMiddleware({
   changeOrigin: true,
   pathRewrite:  { '^/api/external/store': '' },
   on: {
+    proxyReq: (proxyReq, req) => {
+      req.extProviderName = 'DummyJSON';
+      req.extProviderHost = 'https://dummyjson.com';
+      req.sourceType = 'static_external';
+    },
     error: (err, req, res) => res.status(502).json({ error: 'DummyJSON unavailable', detail: err.message })
   }
 });

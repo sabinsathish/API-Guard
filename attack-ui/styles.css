@@ -165,15 +165,19 @@ h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -.4px; }
 .token-input-row { display: flex; gap: 8px; }
 .token-input {
   flex: 1; background: var(--surface); border: 1px solid var(--border);
-  border-radius: 8px; padding: 8px 12px; color: var(--text);
-  font-family: var(--mono); font-size: .8rem;
+  border-radius: 8px; padding: 10px 14px; color: var(--text);
+  font-family: var(--mono); font-size: .8rem; outline: none;
+  transition: border-color .2s;
 }
+.token-input:focus { border-color: var(--blue); }
 .token-result {
-  font-family: var(--mono); font-size: .78rem; padding: 10px 12px;
-  border-radius: 8px; background: var(--surface); color: var(--muted);
-  min-height: 60px; white-space: pre-wrap; word-break: break-all;
-  line-height: 1.6;
+  font-family: var(--mono); font-size: .78rem; padding: 12px 14px;
+  border-radius: 8px; background: #060810; color: var(--muted);
+  min-height: 80px; white-space: pre-wrap; word-break: break-all;
+  line-height: 1.6; border: 1px solid var(--border);
+  margin-top: 8px;
 }
+.token-result pre { color: #a3e635; margin: 0; }
 
 /* ── Feed (right) ─────────────────────────────────────────────────────────── */
 .feed-panel { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
