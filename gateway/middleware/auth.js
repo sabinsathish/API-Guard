@@ -8,13 +8,18 @@ const PUBLIC = ['/auth', '/health', '/logs', '/dashboard', '/socket.io', '/', '/
 const PROTECTED_PREFIXES = ['/api/internal/orders', '/api/internal/profile', '/api/internal/admin'];
 
 const authMiddleware = (req, res, next) => {
-  const isPublic = PUBLIC.some(p => req.path === p || req.path.startsWith(p));
-  if (isPublic || !req.path.startsWith('/api')) return next();
+  const isPublic = PUBLIC.some(p => p === '/' ? req.path === '/' : req.path.startsWith(p));
+  const isApi = req.path.startsWith('/api');
+  const isAdmin = req.path.startsWith('/admin');
+  
+  if (isPublic || (!isApi && !isAdmin)) return next();
 
   // External routes: auth optional (just rate-limited) unless in protected list
   const needsAuth = PROTECTED_PREFIXES.some(p => req.path.startsWith(p));
   if (!needsAuth && req.path.startsWith('/api/external')) return next();
-  if (!needsAuth && !req.path.startsWith('/api/internal')) return next();
+  
+  // If not internal, not admin, and doesn't explicitly need auth -> skip
+  if (!needsAuth && !req.path.startsWith('/api/internal') && !isAdmin) return next();
 
   const ip     = req.clientIp || req.ip || '0.0.0.0';
   const header = req.headers.authorization;

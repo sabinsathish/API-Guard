@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "name": "thecatapi",
+    "target": "https://api.thecatapi.com/v1/images/search",
+    "apiKey": "live_cyPONwGj1Vl3ZDRACBTNK4MVwC3qc9KuZggenqmaXdT8uvkSSC4iLJmZdC3C85RI",
+    "headerName": "x-api-key",
+    "enabled": true,
+    "createdAt": "2026-04-25T07:22:16.959Z"
+  }
+]

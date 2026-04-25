@@ -15,8 +15,10 @@ html, body { height: 100%; font-family: var(--sans); background: var(--bg); colo
 h1 { font-size: 1.1rem; font-weight: 800; }
 .sub { font-size: .75rem; color: var(--muted); margin-top: 2px; }
 .topbar-right { display: flex; align-items: center; gap: 12px; }
-.nav-link { color: var(--muted); text-decoration: none; font-size: .82rem; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; transition: color .2s; }
-.nav-link:hover { color: var(--text); }
+.nav-link { color: var(--muted); text-decoration: none; font-size: .82rem; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; }
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.2); }
+.return-link { background: rgba(79,110,247,.1); color: #818cf8 !important; border-color: rgba(79,110,247,.3); font-weight: 600; }
+.return-link:hover { background: rgba(79,110,247,.2) !important; border-color: var(--blue) !important; color: #fff !important; }
 .conn-chip { display: flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 20px; background: var(--surf2); border: 1px solid var(--border); font-size: .78rem; color: var(--muted); }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .dot.on  { background: var(--green); animation: pulse 1.5s infinite; }

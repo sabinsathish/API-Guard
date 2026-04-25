@@ -8,7 +8,7 @@ let globalCount = 0, globalWindowStart = Date.now();
 const GLOBAL_DOS_LIMIT = 200;
 
 const threatIdentifier = (req, res, next) => {
-  const isPublic = PUBLIC.some(p => req.path === p || req.path.startsWith(p));
+  const isPublic = PUBLIC.some(p => p === '/' ? req.path === '/' : req.path.startsWith(p));
   if (isPublic) return next();
 
   const ip  = req.clientIp || req.ip || '0.0.0.0';

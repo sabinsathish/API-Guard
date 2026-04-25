@@ -8,7 +8,7 @@ let globalWindowStart = Date.now();
 const GLOBAL_DOS_LIMIT = 150;  // requests/second across whole server
 
 const threatDetector = (req, res, next) => {
-  const isPublic = PUBLIC.some(p => req.path === p || req.path.startsWith(p));
+  const isPublic = PUBLIC.some(p => p === '/' ? req.path === '/' : req.path.startsWith(p));
   if (isPublic) return next();
 
   const ip  = req.clientIp || req.ip || '0.0.0.0';

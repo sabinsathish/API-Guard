@@ -1,3 +1,34 @@
+// ── Auth Enforcement ────────────────────────────────────────────────────────
+if (!sessionStorage.getItem('jwt')) {
+  window.location.href = '/login/';
+}
+
+window.logout = function() {
+  sessionStorage.clear();
+  window.location.href = '/login/';
+};
+
+function syncUserProfile() {
+  const username = sessionStorage.getItem('username') || 'Guest';
+  const role = sessionStorage.getItem('role') || 'viewer';
+  
+  const avatar = document.querySelector('.user-profile .avatar');
+  const nameEl = document.querySelector('.user-profile div div:first-child');
+  const roleEl = document.querySelector('.user-profile div div:last-child');
+  
+  if (avatar) avatar.textContent = username.charAt(0).toUpperCase();
+  if (nameEl) nameEl.textContent = username;
+  if (roleEl) roleEl.textContent = role.toUpperCase();
+
+  if (role !== 'admin') {
+    const navApis = document.getElementById('nav-apis');
+    if (navApis) navApis.style.display = 'none';
+    const navSettings = document.getElementById('nav-settings');
+    if (navSettings) navSettings.style.display = 'none';
+  }
+}
+document.addEventListener('DOMContentLoaded', syncUserProfile);
+
 // ── Socket.io connection ────────────────────────────────────────────────────
 const socket = io('http://localhost:3000');
 
@@ -16,9 +47,15 @@ const $ = id => document.getElementById(id);
 function switchView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  $(`view-${name}`).classList.add('active');
-  $(`nav-${name}`).classList.add('active');
+  
+  const viewEl = $(`view-${name}`);
+  const navEl = $(`nav-${name}`);
+  
+  if (viewEl) viewEl.classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  
   if (name === 'logs') fetchLogs();
+  if (name === 'apis') fetchApis();
 }
 
 document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -242,3 +279,92 @@ function clearThreats() {
   $('threatBadge').textContent = 0;
   ['tc-rateLimit','tc-rateAbuse','tc-brute','tc-dos','tc-blocked'].forEach(id => $(id).textContent = 0);
 }
+
+// ── Dynamic APIs ──────────────────────────────────────────────────────────────
+async function fetchApis() {
+  try {
+    const res = await fetch('http://localhost:3000/admin/list-apis', {
+      headers: { 'Authorization': `Bearer ${sessionStorage.getItem('jwt')}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch APIs');
+    const apis = await res.json();
+    
+    const list = $('apiList');
+    if (!apis.length) {
+      list.innerHTML = '<div class="empty">No dynamic APIs registered yet.</div>';
+      return;
+    }
+    
+    list.innerHTML = apis.map(api => `
+      <div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: var(--bg);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <div style="font-weight: 700; font-size: 0.9rem;">${api.name}</div>
+            <div style="font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: 2px;">Proxy: /api/external/${api.name}</div>
+            <div style="font-family: var(--mono); font-size: 0.75rem; color: var(--blue); margin-top: 2px;">Target: ${api.target}</div>
+          </div>
+          <span class="chip ${api.enabled ? '' : 'danger'}" style="font-size: 0.65rem;">${api.enabled ? 'ACTIVE' : 'DISABLED'}</span>
+        </div>
+        ${api.hasKey ? '<div style="font-size: 0.7rem; color: var(--green); margin-top: 8px;">✓ API Key Configured</div>' : ''}
+      </div>
+    `).join('');
+  } catch (err) {
+    $('apiList').innerHTML = '<div class="empty" style="color:var(--red);">Error loading APIs</div>';
+  }
+}
+
+async function registerApi(e) {
+  e.preventDefault();
+  const alertBox = $('apiAlert');
+  alertBox.style.display = 'none';
+  
+  const btn = $('apiSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Registering...';
+  
+  const data = {
+    name: $('apiName').value.trim(),
+    target: $('apiTarget').value.trim(),
+    apiKey: $('apiKey').value.trim(),
+    headerName: $('apiHeader').value.trim()
+  };
+  
+  try {
+    const res = await fetch('http://localhost:3000/admin/register-api', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('jwt')}`
+      },
+      body: JSON.stringify(data)
+    });
+    
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to register API');
+    
+    alertBox.style.display = 'block';
+    alertBox.style.background = 'var(--green-bg)';
+    alertBox.style.color = 'var(--green)';
+    alertBox.style.border = '1px solid rgba(16,201,132,.3)';
+    alertBox.textContent = '✅ API successfully registered!';
+    
+    // Clear form
+    e.target.reset();
+    fetchApis();
+  } catch (err) {
+    alertBox.style.display = 'block';
+    alertBox.style.background = 'var(--red-bg)';
+    alertBox.style.color = 'var(--red)';
+    alertBox.style.border = '1px solid rgba(239,68,68,.3)';
+    alertBox.textContent = '❌ ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '➕ Register API';
+  }
+}
+
+socket.on('api_registered', (apis) => {
+  if ($('view-apis') && $('view-apis').classList.contains('active')) {
+    fetchApis();
+  }
+});

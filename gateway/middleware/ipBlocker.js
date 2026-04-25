@@ -8,7 +8,7 @@ const ipBlocker = (req, res, next) => {
   req.clientIp = ip;
 
   // Skip block enforcement for public/internal paths
-  const isPublic = PUBLIC.some(p => req.path === p || req.path.startsWith(p));
+  const isPublic = PUBLIC.some(p => p === '/' ? req.path === '/' : req.path.startsWith(p));
   if (isPublic) return next();
 
   // ── Enforce block using ThreatEngine ────────────────────────────────────

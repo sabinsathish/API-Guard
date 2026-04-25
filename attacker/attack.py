@@ -18,6 +18,7 @@ Modes:
 
 Options:
   --host HOST   Gateway host (default: http://localhost:3000)
+  --endpoint E  Target API endpoint (default: /api/posts)
   --duration N  Seconds to run each attack (default: 10)
   --threads N   Threads for DoS mode (default: 50)
 """
@@ -35,6 +36,13 @@ try:
 except ImportError:
     print("[!] Install requests:  pip install requests")
     sys.exit(1)
+
+# Force UTF-8 encoding for Windows console
+if sys.stdout.encoding.lower() != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass
 
 # ── ANSI Colors ────────────────────────────────────────────────────────────────
 R = "\033[91m"; G = "\033[92m"; Y = "\033[93m"
@@ -83,7 +91,7 @@ def reset_counts():
 
 # ── Attack Modes ───────────────────────────────────────────────────────────────
 
-def mode_normal(host: str, duration: int, **_):
+def mode_normal(host: str, endpoint: str, duration: int, **_):
     """Legitimate traffic: 5 req/s, with a valid JWT."""
     banner("MODE 1 — NORMAL TRAFFIC", G)
     print(f"  {G}Sending legitimate traffic at ~5 req/s for {duration}s{RESET}")
@@ -96,7 +104,7 @@ def mode_normal(host: str, duration: int, **_):
     end = time.time() + duration
     while time.time() < end:
         try:
-            r = requests.get(f"{host}/api/posts/1", headers=headers, timeout=3)
+            r = requests.get(f"{host}{endpoint}", headers=headers, timeout=3)
             inc("sent")
             if r.status_code == 200:
                 inc("ok")
@@ -112,7 +120,7 @@ def mode_normal(host: str, duration: int, **_):
     status_summary()
 
 
-def mode_rate_abuse(host: str, duration: int, **_):
+def mode_rate_abuse(host: str, endpoint: str, duration: int, **_):
     """Single IP hammers the API endpoint as fast as possible."""
     banner("MODE 2 — RATE ABUSE", Y)
     print(f"  {Y}One IP sending requests as fast as possible for {duration}s{RESET}")
@@ -125,7 +133,7 @@ def mode_rate_abuse(host: str, duration: int, **_):
     end = time.time() + duration
     while time.time() < end:
         try:
-            r = requests.get(f"{host}/api/posts", headers=headers, timeout=2)
+            r = requests.get(f"{host}{endpoint}", headers=headers, timeout=2)
             inc("sent")
             if r.status_code == 200:
                 inc("ok"); sys.stdout.write(f"{G}·{RESET}")
@@ -185,12 +193,12 @@ def mode_brute_force(host: str, duration: int, **_):
     status_summary()
 
 
-def _flood_worker(host: str, end_time: float, fake_ip: str):
+def _flood_worker(host: str, endpoint: str, end_time: float, fake_ip: str):
     """Worker thread for DoS — sends requests with spoofed X-Forwarded-For."""
     headers = {"X-Forwarded-For": fake_ip, "User-Agent": f"DDoS-Bot/{random.randint(1,99)}"}
     while time.time() < end_time:
         try:
-            r = requests.get(f"{host}/api/posts", headers=headers, timeout=2)
+            r = requests.get(f"{host}{endpoint}", headers=headers, timeout=2)
             inc("sent")
             if   r.status_code == 200:  inc("ok")
             elif r.status_code == 429:  inc("rate_lim")
@@ -200,7 +208,7 @@ def _flood_worker(host: str, end_time: float, fake_ip: str):
             inc("errors")
 
 
-def mode_dos(host: str, duration: int, threads: int = 50, **_):
+def mode_dos(host: str, endpoint: str, duration: int, threads: int = 50, **_):
     """Distributed flood from many fake IPs → global DoS threshold."""
     banner("MODE 4 — DISTRIBUTED DoS FLOOD", R)
     print(f"  {R}Launching {threads} concurrent threads for {duration}s{RESET}")
@@ -212,7 +220,7 @@ def mode_dos(host: str, duration: int, threads: int = 50, **_):
     thread_list = []
 
     for ip in fake_ips:
-        t = threading.Thread(target=_flood_worker, args=(host, end_time, ip), daemon=True)
+        t = threading.Thread(target=_flood_worker, args=(host, endpoint, end_time, ip), daemon=True)
         thread_list.append(t)
         t.start()
 
@@ -234,7 +242,7 @@ def mode_dos(host: str, duration: int, threads: int = 50, **_):
     status_summary()
 
 
-def mode_demo(host: str, duration: int, threads: int, **_):
+def mode_demo(host: str, endpoint: str, duration: int, threads: int, **_):
     """Full sequential demo — runs all 4 modes one after another."""
     banner("FULL DEMO — All Attack Modes", C)
     print(f"  {C}This will run all 4 attack modes sequentially.{RESET}")
@@ -251,7 +259,7 @@ def mode_demo(host: str, duration: int, threads: int, **_):
         print(f"\n{W}{BOLD}Next: {label} in 3 seconds…{RESET}")
         time.sleep(3)
         reset_counts()
-        fn(host=host, duration=step_duration, threads=threads)
+        fn(host=host, endpoint=endpoint, duration=step_duration, threads=threads)
         print(f"{G}✔ Done. Pausing 5 seconds before next mode…{RESET}")
         time.sleep(5)
 
@@ -294,6 +302,7 @@ def main():
     parser.add_argument("mode", nargs="?", choices=list(MODES.keys()),
                         help="Attack mode to run")
     parser.add_argument("--host",     default="http://localhost:3000", help="Gateway URL")
+    parser.add_argument("--endpoint", default="/api/posts", help="Target API endpoint")
     parser.add_argument("--duration", type=int, default=10,  help="Duration in seconds")
     parser.add_argument("--threads",  type=int, default=50,  help="Threads for DoS mode")
     args = parser.parse_args()
@@ -320,7 +329,7 @@ def main():
 
     fn = MODES[args.mode]
     try:
-        fn(host=args.host, duration=args.duration, threads=args.threads)
+        fn(host=args.host, endpoint=args.endpoint, duration=args.duration, threads=args.threads)
     except KeyboardInterrupt:
         print(f"\n\n  {Y}Interrupted by user.{RESET}")
         status_summary()

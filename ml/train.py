@@ -4,12 +4,12 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 import os
 
-print("🚀 Starting Hybrid Threat Detection ML Training...")
+print("Starting Hybrid Threat Detection ML Training...")
 
 # 1. Load Data
 dataset_path = 'dataset.csv'
 if not os.path.exists(dataset_path):
-    print(f"❌ Error: {dataset_path} not found. Run generate_dataset.py first.")
+    print(f"Error: {dataset_path} not found. Run generate_dataset.py first.")
     exit(1)
 
 df = pd.read_csv(dataset_path)
@@ -20,7 +20,7 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df)
 
 # 3. Train Isolation Forest
-print("🌲 Training Isolation Forest (n_estimators=200, contamination=0.02)...")
+print("Training Isolation Forest (n_estimators=200, contamination=0.02)...")
 model = IsolationForest(
     n_estimators=200,
     contamination=0.02,
@@ -33,4 +33,4 @@ model.fit(X_scaled)
 joblib.dump(scaler, 'scaler.pkl')
 joblib.dump(model, 'model.pkl')
 
-print("✅ Training complete. Saved 'scaler.pkl' and 'model.pkl'.")
+print("Training complete. Saved 'scaler.pkl' and 'model.pkl'.")

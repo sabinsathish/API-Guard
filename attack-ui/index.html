@@ -21,8 +21,14 @@
         </div>
       </div>
       <div class="header-right">
-        <a href="/dashboard/" class="btn-link">← Dashboard</a>
-        <div class="conn-pill" id="connPill">
+        <a href="/dashboard/" class="btn-link return-link">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Return to Dashboard
+        </a>
+        <a href="/api-tester/" class="btn-link">🧪 API Tester</a>
+        <a href="/attacker/" class="btn-link">🐍 Python Attacker</a>
+        <a href="#" onclick="logout(); return false;" class="btn-link">🔑 Logout</a>
+        <div class="conn-pill" id="connPill" style="margin-left: 8px;">
           <span class="dot" id="connDot"></span>
           <span id="connText">Connecting…</span>
         </div>
@@ -162,8 +168,18 @@
         </div>
       </main>
     </div>
-  </div>
+</div>
+<script>
+// ── Auth Enforcement ────────────────────────────────────────────────────────
+if (!sessionStorage.getItem('jwt')) {
+  window.location.href = '/login/';
+}
 
-  <script src="app.js"></script>
+window.logout = function() {
+  sessionStorage.clear();
+  window.location.href = '/login/';
+};
+</script>
+<script src="app.js"></script>
 </body>
 </html>

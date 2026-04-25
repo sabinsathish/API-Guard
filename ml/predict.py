@@ -12,12 +12,12 @@ scaler_path = os.path.join(os.path.dirname(__file__), 'scaler.pkl')
 
 print("Loading ML models for Prediction Server...")
 if not os.path.exists(model_path) or not os.path.exists(scaler_path):
-    print("❌ Error: model.pkl or scaler.pkl missing. Run train.py first.")
+    print("Error: model.pkl or scaler.pkl missing. Run train.py first.")
     exit(1)
 
 model = joblib.load(model_path)
 scaler = joblib.load(scaler_path)
-print("✅ Models loaded successfully.")
+print("Models loaded successfully.")
 
 # Feature names in the exact order trained
 FEATURE_COLS = [
@@ -87,7 +87,7 @@ class MLPredictHandler(BaseHTTPRequestHandler):
 def run(server_class=HTTPServer, handler_class=MLPredictHandler, port=PORT):
     server_address = ('127.0.0.1', port)
     httpd = server_class(server_address, handler_class)
-    print(f"🌲 Isolation Forest ML Server running on port {port}...")
+    print(f"Isolation Forest ML Server running on port {port}...")
     httpd.serve_forever()
 
 if __name__ == '__main__':

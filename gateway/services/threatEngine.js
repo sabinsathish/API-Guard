@@ -10,14 +10,14 @@ const DECAY_RATE    = 0.8;   // points/second decay
 const BLOCK_MS      = 5 * 60 * 1000;
 
 // Threat level thresholds for Final Risk Score
-const LEVELS = { LOW: 20, MEDIUM: 40, HIGH: 70, CRITICAL: 90 };
+const LEVELS = { LOW: 20, MEDIUM: 40, HIGH: 60, CRITICAL: 90 };
 
 // Scoring weights (Rule Engine)
 const WEIGHTS = {
   REQUEST:       0.5,
   ERROR_4XX:     2.5,
   ERROR_5XX:     6.0,
-  BROKEN_AUTH:   18.0,
+  BROKEN_AUTH:   25.0,
   BURST_PENALTY: 2.5,
   SQL_INJECTION: 35.0,
   XSS_PAYLOAD:   30.0,
@@ -253,7 +253,10 @@ class ThreatEngine {
     s.reqs10s += 1;
     let pts = WEIGHTS.REQUEST;
     if (s.reqs10s > 15) pts += WEIGHTS.BURST_PENALTY;
-    return this._applyPoints(entityId, pts, 'HIGH_VELOCITY');
+    
+    // Label as DOS if velocity is very high
+    const reason = s.reqs10s > 30 ? 'DOS_ATTACK' : 'HIGH_VELOCITY';
+    return this._applyPoints(entityId, pts, reason);
   }
 
   static evaluateOutcome(entityId, status) {
@@ -312,7 +315,12 @@ class ThreatEngine {
     const now = Date.now();
     return [...entities.entries()]
       .filter(([, s]) => s.blockUntil > now)
-      .map(([id, s]) => ({ entityId: id, remainingSec: Math.round((s.blockUntil - now) / 1000), score: s.finalScore }));
+      .map(([id, s]) => ({ 
+        ip: id.replace('ip:', '').replace('user:', ''),
+        entityId: id, 
+        remainingSec: Math.round((s.blockUntil - now) / 1000), 
+        score: s.finalScore 
+      }));
   }
 
   static getAllActive() {
@@ -328,10 +336,10 @@ class ThreatEngine {
   static _emit(level, entityId, reason, s, action) {
     const io = getIo();
     if (io) io.emit('threat', {
-      type:    level === 'CRITICAL' || level === 'HIGH' ? `${entityId.startsWith('user:') ? 'USER' : 'IP'}_BLOCKED` : 'SUSPICIOUS_ACTIVITY',
+      type:    level === 'CRITICAL' || level === 'HIGH' ? `${entityId.startsWith('user:') ? 'USER' : 'IP'}_BLOCKED` : reason,
       level,   
       entityId,
-      ip:      entityId,
+      ip:      entityId.replace('ip:', '').replace('user:', ''),
       reason,  
       ruleScore: Math.floor(s.ruleScore),
       mlScore:   Math.floor(s.mlScore),
@@ -339,6 +347,16 @@ class ThreatEngine {
       action,  
       status: 403,
       time:    new Date().toISOString()
+    });
+  }
+
+  // Support for direct threat emission from middleware
+  static _emitThreat(type, ip, level, reason) {
+    const io = getIo();
+    if (io) io.emit('threat', {
+      type, ip, level, reason,
+      status: 403,
+      time: new Date().toISOString()
     });
   }
 }

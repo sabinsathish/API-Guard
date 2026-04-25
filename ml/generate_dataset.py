@@ -76,4 +76,4 @@ df_all = pd.concat([df_normal, df_attack], ignore_index=True)
 df_all = df_all.sample(frac=1, random_state=42).reset_index(drop=True)
 
 df_all.to_csv('dataset.csv', index=False)
-print("✅ dataset.csv successfully created with 23 features.")
+print("dataset.csv successfully created with 23 features.")

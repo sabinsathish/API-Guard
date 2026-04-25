@@ -210,11 +210,16 @@ router.post('/run-demo', async (req, res) => {
     await sleep(500);
     const bfUsers = ['root','admin','superuser','ubuntu','ops','test','guest'];
     const bfPawds = ['123456','password','admin','letmein','qwerty','abc123'];
-    for (let i = 0; i < 35; i++) {
-      gatewayReq({ method: 'POST', path: '/auth/login', ip: randIp(),
-        body: { username: bfUsers[i % bfUsers.length], password: bfPawds[i % bfPawds.length] }
-      });
-      await sleep(60);
+    // 5 IPs doing 7 attempts each (Total 35)
+    for (let ipIdx = 0; ipIdx < 5; ipIdx++) {
+      const targetIp = randIp();
+      for (let attempt = 0; attempt < 7; attempt++) {
+        gatewayReq({ method: 'POST', path: '/auth/login', ip: targetIp,
+          body: { username: bfUsers[attempt % bfUsers.length], password: bfPawds[attempt % bfPawds.length] }
+        });
+        await sleep(50);
+      }
+      await sleep(200);
     }
     await sleep(2000);
 
@@ -301,6 +306,46 @@ router.post('/scrape', async (req, res) => {
   }
 });
 
+// ── POST /demo/brute-force — Individual trigger ────────────────────────────────
+router.post('/brute-force', async (req, res) => {
+  res.json({ started: true, mode: 'BRUTE_FORCE' });
+  const bfUsers = ['root','admin','superuser','ubuntu','ops','test','guest'];
+  const bfPawds = ['123456','password','admin','letmein','qwerty','abc123'];
+  const targetIp = randIp();
+  for (let attempt = 0; attempt < 8; attempt++) {
+    gatewayReq({ method: 'POST', path: '/auth/login', ip: targetIp,
+      body: { username: bfUsers[attempt % bfUsers.length], password: bfPawds[attempt % bfPawds.length] }
+    });
+    await sleep(80);
+  }
+});
+
+// ── POST /demo/dos — Individual trigger (Intense) ──────────────────────────────
+router.post('/dos', async (req, res) => {
+  res.json({ started: true, mode: 'DOS_FLOOD' });
+  const token = await getToken();
+  const dip = randIp();
+  const dosPs = [];
+  // Send 100 requests quickly from a single IP to trigger block
+  for (let i = 0; i < 100; i++) {
+    dosPs.push(gatewayReq({ path: '/api/external/posts', ip: dip, token }));
+    if (i % 20 === 0) await sleep(20);
+  }
+  await Promise.allSettled(dosPs);
+});
+
+// ── POST /demo/route-scan — Individual trigger ────────────────────────────────
+router.post('/route-scan', async (req, res) => {
+  res.json({ started: true, mode: 'ROUTE_SCAN' });
+  const token = await getToken();
+  const targetIp = randIp();
+  const paths = ['/admin', '/.env', '/config', '/phpmyadmin', '/wp-admin', '/.git/config', '/api/internal/admin/dashboard'];
+  for (const p of paths) {
+    gatewayReq({ path: p, ip: targetIp, token });
+    await sleep(200);
+  }
+});
+
 // ── GET /demo/run-python?mode=X&duration=N — stream attack.py via SSE ─────────
 router.get('/run-python', (req, res) => {
   const mode     = ['normal','rate_abuse','brute_force','dos','demo'].includes(req.query.mode) ? req.query.mode : 'demo';
@@ -321,7 +366,7 @@ router.get('/run-python', (req, res) => {
 
   let proc;
   try {
-    proc = spawn('python', args);
+    proc = spawn('python', args, { env: { ...process.env, PYTHONIOENCODING: 'utf-8' } });
     pythonProc = proc;
   } catch (e) {
     send({ type: 'error', msg: `Failed to start Python: ${e.message}` });

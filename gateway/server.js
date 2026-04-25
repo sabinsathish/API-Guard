@@ -47,8 +47,8 @@ app.use((req, res, next) => {
 });
 
 // ── SECURITY MIDDLEWARE PIPELINE ──────────────────────────────────────────────
-app.use(ipBlocker);
 app.use(logger);
+app.use(ipBlocker);
 app.use(rateLimiter);
 app.use(authMiddleware);
 app.use(threatIdentifier);
