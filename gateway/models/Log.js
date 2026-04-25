@@ -19,6 +19,7 @@ const logSchema = new mongoose.Schema({
   timestamp:   { type: Date, default: Date.now }
 });
 
-logSchema.index({ timestamp: 1 }, { expireAfterSeconds: 3600 });
+// Removed TTL index to allow for long-term ML training data
+// logSchema.index({ timestamp: 1 }, { expireAfterSeconds: 3600 });
 
 module.exports = mongoose.model('Log', logSchema);

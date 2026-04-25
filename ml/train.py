@@ -20,10 +20,10 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df)
 
 # 3. Train Isolation Forest
-print("Training Isolation Forest (n_estimators=200, contamination=0.02)...")
+print("Training Isolation Forest (n_estimators=200, contamination=0.20)...")
 model = IsolationForest(
     n_estimators=200,
-    contamination=0.02,
+    contamination=0.20,
     random_state=42,
     n_jobs=-1
 )

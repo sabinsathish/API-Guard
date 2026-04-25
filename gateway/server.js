@@ -102,7 +102,13 @@ const startServer = async () => {
       console.log('⚠️  MongoDB not found — starting portable database…');
       const dbPath = path.join(__dirname, '../database');
       if (!fs.existsSync(dbPath)) fs.mkdirSync(dbPath);
-      const mongod = await MongoMemoryServer.create({ instance: { dbPath, storageEngine: 'wiredTiger' } });
+      const mongod = await MongoMemoryServer.create({ 
+        instance: { 
+          dbPath, 
+          storageEngine: 'wiredTiger',
+          port: 27018 // Fixed port for consistency
+        } 
+      });
       const uri = mongod.getUri();
       await mongoose.connect(uri, { dbName: 'secureGateway' });
       console.log(`✅ Portable DB started! Data at: ${dbPath}`);

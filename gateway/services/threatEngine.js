@@ -132,8 +132,9 @@ class ThreatEngine {
     // Clean logs older than 5m (300,000ms)
     s.reqLog = s.reqLog.filter(x => now - x.time < 300000);
 
-    // Re-eval ML Score asynchronously every 15 logged requests
-    if (s.reqLog.length % 15 === 0) {
+    // Re-eval ML Score asynchronously every 5 logged requests (more sensitive)
+    // OR if the rule-engine already thinks something is suspicious (score > 10)
+    if (s.reqLog.length % 5 === 0 || (s.ruleScore > 10 && s.reqLog.length % 2 === 0)) {
       this._fetchMLScoreAsync(entityId);
     }
   }

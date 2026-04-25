@@ -209,8 +209,65 @@ socket.on('threat', data => {
   const at = $('allThreats');
   const emptyAt = at.querySelector('.empty');
   if (emptyAt) emptyAt.remove();
+  
+  // Give it an ID so we can update it later if it doesn't have one
+  const safeId = data.ip ? data.ip.replace(/[^a-zA-Z0-9]/g, '-') : 'unknown';
+  const existing = document.getElementById(`live-threat-${safeId}`);
+  if (existing) {
+     existing.remove(); // Remove old one to bump it to the top
+  }
+  item.id = `live-threat-${safeId}`;
+  
   at.insertBefore(item, at.firstChild);
   while (at.children.length > 200) at.lastChild.remove();
+});
+
+// ── Live Score Update (Efficient Real-Time) ──────────────────────────────────
+socket.on('score_update', data => {
+  const safeId = data.entityId.replace(/[^a-zA-Z0-9]/g, '-');
+  let div = document.getElementById(`live-threat-${safeId}`);
+  
+  if (!div) {
+    if (data.finalScore <= 5) return; // Ignore very low noise
+    
+    // Create new tracking item
+    const mockData = {
+      type: data.level || 'SUSPICIOUS',
+      ip: data.entityId,
+      time: Date.now(),
+      reason: data.reason || 'Monitoring...',
+      status: '---',
+      ruleScore: data.ruleScore,
+      mlScore: data.mlScore,
+      score: data.finalScore
+    };
+    div = makeEventItem(mockData);
+    div.id = `live-threat-${safeId}`;
+    
+    const at = $('allThreats');
+    const emptyAt = at.querySelector('.empty');
+    if (emptyAt) emptyAt.remove();
+    at.insertBefore(div, at.firstChild);
+    while (at.children.length > 50) at.lastChild.remove();
+  } else {
+    // Efficiently update existing DOM element in-place
+    const scoresHtml = `
+      <div class="threat-scores">
+        <span title="Rule Score" style="color:var(--amber); border:1px solid var(--border); padding:2px 6px; border-radius:4px; font-size:0.62rem;">Rules: ${data.ruleScore}</span>
+        <span title="Machine Learning Score" style="color:var(--purple); border:1px solid var(--border); padding:2px 6px; border-radius:4px; font-size:0.62rem;">ML: ${data.mlScore}</span>
+        <span title="Final Hybrid Risk Score" style="color:var(--red); font-weight:700; padding:2px 6px; border-radius:4px; font-size:0.65rem; background:rgba(239,68,68,0.1);">Risk: ${data.finalScore}</span>
+      </div>
+    `;
+    const bodyEl = div.querySelector('.event-body');
+    const existingScores = bodyEl.querySelector('.threat-scores');
+    if (existingScores) existingScores.outerHTML = scoresHtml;
+    else bodyEl.insertAdjacentHTML('beforeend', scoresHtml);
+    
+    if (data.reason) {
+      const reasonEl = div.querySelector('.event-body > div:nth-child(2)');
+      if (reasonEl) reasonEl.textContent = data.reason;
+    }
+  }
 });
 
 function makeEventItem(data) {
