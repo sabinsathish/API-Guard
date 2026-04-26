@@ -1,35 +1,65 @@
-# 🛡️ API-Guard: Hybrid Multi-Source Secure API Gateway
+# API-Guard: Hybrid Multi-Source Secure API Gateway
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-success.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 ![MongoDB](https://img.shields.io/badge/database-MongoDB-green.svg)
 
-API-Guard is a high-performance, intelligent API Gateway that protects your internal and external services using a **Hybrid Threat Detection Engine**. It combines traditional **Deterministic Rule-Based Detection** (Rate Limiting, IP Blacklisting) with **Unsupervised Machine Learning (Isolation Forest)** to catch stealthy, behavioral anomalies that standard firewalls miss.
+API-Guard is a high-performance, intelligent API Gateway that protects your internal and external services using a Hybrid Threat Detection Engine. It combines traditional Deterministic Rule-Based Detection (Rate Limiting, IP Blacklisting) with Unsupervised Machine Learning (Isolation Forest) to catch stealthy, behavioral anomalies that standard firewalls miss.
 
 ---
 
-## ✨ Key Features
+## Theme 1: Cybersecurity & Digital Trust
 
-*   **🧠 Hybrid Threat Engine**: Calculates a combined "Risk Score" based on hard rules (65% weight) and ML anomaly detection (35% weight).
-*   **🤖 ML Behavioral Profiling**: Uses an Isolation Forest algorithm evaluating 23 distinct behavioral features per IP (request intervals, error rates, token swaps, endpoint hunting).
-*   **📊 Real-Time Security Dashboard**: A beautiful, live-updating UI built with Chart.js and Socket.io to monitor traffic and track attackers in real-time.
-*   **⚔️ Integrated Attack Simulator**: A built-in testing suite to safely launch DoS, Brute Force, and Route Scanning attacks against your own gateway to visualize the defenses.
-*   **🔄 Online ML Retraining**: Extract live traffic logs from your MongoDB database to retrain and specialize the ML model for your specific API's baseline traffic.
-*   **🔌 Dynamic API Proxying**: Easily register and route traffic to external APIs (like OpenAI, Stripe) or internal microservices securely.
+### Problem Statement
+
+Modern applications rely heavily on APIs, which act as the backbone for communication between services, clients, and external platforms. However, APIs are highly vulnerable to various security threats such as unauthorized access, abuse, data breaches, and denial-of-service (DoS) attacks. Traditional security mechanisms often fail to detect sophisticated or slow-moving attacks that mimic normal user behavior.
+
+**Problem**  
+Modern applications rely heavily on APIs, which are vulnerable to attacks such as unauthorized access, abuse, and denial-of-service.
+
+**Challenge**  
+Develop a secure API gateway that includes:  
+• Authentication (e.g., JWT-based access control)  
+• Rate limiting to prevent abuse  
+• Logging and monitoring of suspicious activities  
+
+**Goal**  
+Enhance backend security by protecting APIs and providing visibility into potential threats.
+
+### Explanation
+
+In real-world systems, APIs are constantly exposed to the internet, making them prime targets for attackers. While basic protections like authentication and rate limiting help, they are often insufficient against advanced threats such as behavioral anomalies, token misuse, or coordinated attack patterns.
+
+This project addresses the gap by introducing a hybrid approach:
+- Rule-based systems handle known attack patterns instantly.
+- Machine learning detects unknown or evolving threats by analyzing behavior.
+
+The goal is not just to block attacks, but to provide real-time visibility, intelligent detection, and adaptive security for modern API-driven architectures.
 
 ---
 
-## 🏗️ Architecture
+## Key Features
 
-1.  **Gateway Server (`server.js`)**: The main Node.js/Express entry point that intercepts all traffic.
-2.  **Threat Engine (`threatEngine.js`)**: Tracks request histories in memory, calculates rule penalties, and fetches ML scores.
-3.  **ML Microservice (`ml/predict.py`)**: A Python-based prediction server running on port 5002 that scores behavioral vectors.
-4.  **MongoDB Data Layer (`models/Log.js`)**: Persistent storage of every request for auditing and ML retraining.
+* Hybrid Threat Engine: Calculates a combined "Risk Score" based on hard rules (65% weight) and ML anomaly detection (35% weight).
+* ML Behavioral Profiling: Uses an Isolation Forest algorithm evaluating 23 distinct behavioral features per IP (request intervals, error rates, token swaps, endpoint hunting).
+* Real-Time Security Dashboard: A live-updating UI built with Chart.js and Socket.io to monitor traffic and track attackers in real-time.
+* Integrated Attack Simulator: A built-in testing suite to safely launch DoS, Brute Force, and Route Scanning attacks against your own gateway to visualize the defenses.
+* Online ML Retraining: Extract live traffic logs from your MongoDB database to retrain and specialize the ML model for your specific API's baseline traffic.
+* Dynamic API Proxying: Easily register and route traffic to external APIs (like OpenAI, Stripe) or internal microservices securely.
 
 ---
 
-## 🚀 Getting Started
+## Architecture
+
+1. Gateway Server (`server.js`): The main Node.js/Express entry point that intercepts all traffic.
+2. Threat Engine (`threatEngine.js`): Tracks request histories in memory, calculates rule penalties, and fetches ML scores.
+3. ML Microservice (`ml/predict.py`): A Python-based prediction server running on port 5002 that scores behavioral vectors.
+4. MongoDB Data Layer (`models/Log.js`): Persistent storage of every request for auditing and ML retraining.
+
+---
+
+## Getting Started
 
 ### 1. Prerequisites
 Ensure you have the following installed on your system:
@@ -62,7 +92,7 @@ You will see output indicating that both the Gateway (Port 3000) and the ML Serv
 
 ---
 
-## 🎮 How to Use the Suite
+## How to Use the Suite
 
 Once the server is running, you can access the following web interfaces:
 
@@ -84,7 +114,7 @@ Once the server is running, you can access the following web interfaces:
 
 ---
 
-## 🧠 Machine Learning: Training & Fine-Tuning
+## Machine Learning: Training & Fine-Tuning
 
 API-Guard comes with a pre-trained model (`model.pkl`), but you should train it on your own traffic data for the best results.
 
@@ -107,7 +137,7 @@ python evaluate.py
 
 ---
 
-## 🗄️ Viewing Your Database
+## Viewing Your Database
 By default, the system runs a persistent database on port `27018` to ensure your ML training data isn't lost.
 1. Open **MongoDB Compass**.
 2. Connect to: `mongodb://127.0.0.1:27018/`
@@ -117,5 +147,5 @@ By default, the system runs a persistent database on port `27018` to ensure your
 
 ---
 
-## 🔒 Security Disclaimer
+## Security Disclaimer
 This software is intended for educational purposes, internal network protection, and security research. Do not use the Attack Simulator against external targets you do not have explicit permission to test.
